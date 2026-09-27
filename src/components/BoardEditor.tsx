@@ -304,12 +304,14 @@ export function BoardEditor({
                   key={type}
                   type="button"
                   onClick={() => setTerrain(selected!, type)}
-                  className={`rounded-lg px-3 py-1.5 text-sm transition ${
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm
+                              transition ${
                     tile.type === type && !tile.blank
                       ? 'bg-sea-400 font-semibold text-sea-950'
                       : 'bg-white/10 hover:bg-white/20'
                   }`}
                 >
+                  <span aria-hidden>{RESOURCE_EMOJI[type]}</span>
                   {RESOURCE_LABELS[type]}
                 </button>
               ))}
