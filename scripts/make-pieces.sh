@@ -15,7 +15,7 @@ trap 'rm -rf "$TMP"' EXIT
 mkdir -p "$OUT"
 
 # Keep in step with --color-player-* in src/index.css.
-declare -A COLORS=([red]='#ff453a' [blue]='#0a87ff' [yellow]='#ffd60a' [white]='#f8fafc')
+declare -A COLORS=([red]='#ff453a' [blue]='#0a87ff' [yellow]='#ffd60a' [white]='#f8fafc' [green]='#30d158' [brown]='#a2744a' [purple]='#bf5af2' [pink]='#ff6fb5')
 # Crop boxes (WxH+X+Y) around each piece in the photo, with a little margin.
 declare -A BOXES=([road]='30x96+60+83' [city]='75x74+159+95' [settlement]='52x52+284+113')
 # Each piece's darkest and brightest red (2nd and 98th percentile), so every

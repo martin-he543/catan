@@ -1,0 +1,142 @@
+rules_version = '2';
+
+// Security rules for online Catan. See FIREBASE_SETUP.md for the data model.
+//
+// Two kinds of game share these rules, fixed per game by its `authority`:
+//
+//  - 'client': the players' browsers referee. A seated player may replace the
+//    state, but only one version at a time (seq + 1), inside a transaction.
+//    Everyone at the table can read the whole state — hands included — so
+//    this mode is for friends.
+//  - 'server': only the Cloud Functions (Admin SDK, which bypasses rules)
+//    touch a running game. Clients read their own redacted view.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function me() {
+      return request.auth.uid;
+    }
+
+    function gameBefore(code) {
+      return get(/databases/$(database)/documents/games/$(code)).data;
+    }
+
+    function gameAfter(code) {
+      return getAfter(/databases/$(database)/documents/games/$(code)).data;
+    }
+
+    match /games/{code} {
+      function incoming() {
+        return request.resource.data;
+      }
+
+      function changed() {
+        return incoming().diff(resource.data).affectedKeys();
+      }
+
+      function seatsValid(data) {
+        return data.seats is list
+          && data.seats.size() >= 2
+          && data.seats.size() <= 8
+          && data.seatUids is list
+          && data.seatUids.size() == data.seats.size();
+      }
+
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && code.matches('^[A-Z2-9]{6}$')
+        && incoming().code == code
+        && incoming().hostUid == me()
+        && incoming().status == 'lobby'
+        && incoming().seq == 0
+        && incoming().authority in ['client', 'server']
+        && incoming().visibility in ['public', 'private']
+        && seatsValid(incoming())
+        && incoming().seatUids[0] == me()
+        && !('state' in incoming())
+        && !('view' in incoming())
+        && (incoming().setup == null || (incoming().setup is string && incoming().setup.size() < 400000));
+
+      allow update: if signedIn()
+        && !changed().hasAny(['code', 'hostUid', 'authority', 'createdAt'])
+        && seatsValid(incoming())
+        && (
+          // The host runs the lobby: seats, rules, and — when browsers
+          // referee — dealing the board.
+          (resource.data.hostUid == me()
+            && resource.data.status == 'lobby'
+            && (incoming().status == 'lobby'
+              || (resource.data.authority == 'client'
+                && incoming().status == 'playing'
+                && incoming().seq == 0
+                && incoming().state is string
+                && incoming().state.size() < 900000)))
+
+          // Anyone signed in may take a seat, or leave one, while the table fills.
+          || (resource.data.status == 'lobby'
+            && incoming().status == 'lobby'
+            && changed().hasOnly(['seats', 'seatUids', 'updatedAt'])
+            && incoming().seats.size() == resource.data.seats.size()
+            && (me() in incoming().seatUids || me() in resource.data.seatUids))
+
+          // Seated players move a browser-refereed game on, one version at a time.
+          || (resource.data.authority == 'client'
+            && resource.data.status == 'playing'
+            && me() in resource.data.seatUids
+            && changed().hasOnly(['state', 'seq', 'status', 'turnSeat', 'waiting', 'winner', 'deadline', 'updatedAt'])
+            && incoming().seq == resource.data.seq + 1
+            && incoming().status in ['playing', 'ended']
+            && incoming().state is string
+            && incoming().state.size() < 900000)
+        );
+
+      // The host may clear away a table that isn't mid-game.
+      allow delete: if signedIn()
+        && resource.data.hostUid == me()
+        && resource.data.status != 'playing';
+
+      // Every action, with the dice it drew, for replays. In a server-refereed
+      // game the actions reveal hidden cards (a discard, a gold pick), so the
+      // log opens only once the game is over.
+      match /log/{seq} {
+        allow read: if signedIn()
+          && (gameBefore(code).authority == 'client' || gameBefore(code).status == 'ended');
+        allow create: if signedIn()
+          && gameAfter(code).authority == 'client'
+          && me() in gameAfter(code).seatUids
+          && request.resource.data.uid == me()
+          && int(seq) == gameAfter(code).seq;
+        allow update, delete: if false;
+      }
+
+      match /chat/{message} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && me() in gameBefore(code).seatUids
+          && request.resource.data.uid == me()
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 300
+          && request.resource.data.name is string
+          && request.resource.data.name.size() <= 32;
+        allow update, delete: if false;
+      }
+
+      // Server authority: each seat's redacted view, readable only by its player.
+      match /views/{viewer} {
+        allow read: if signedIn() && me() == viewer;
+        allow write: if false;
+      }
+
+      // Server authority: the full state. Nobody but the Cloud Functions.
+      match /secret/{doc} {
+        allow read, write: if false;
+      }
+    }
+  }
+}

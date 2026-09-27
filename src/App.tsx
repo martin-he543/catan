@@ -1,14 +1,19 @@
+import { lazy, Suspense, useEffect } from 'react'
 import { Link, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { Home } from './pages/Home'
 import { Generator } from './pages/Generator'
 import { Import } from './pages/Import'
 import { Position } from './pages/Position'
 
+// Online play pulls in Firebase and the rules engine, so it loads on demand.
+const Play = lazy(() => import('./pages/Play'))
+
 const NAV = [
   { to: '/', label: 'Resources', end: true },
   { to: '/board', label: 'Board generator', end: false },
   { to: '/import', label: 'Import Catan', end: false },
   { to: '/position', label: 'Position', end: false },
+  { to: '/play', label: 'Play online', end: false },
 ]
 
 function Header() {
@@ -47,6 +52,13 @@ function Header() {
   )
 }
 
+/** A new page starts at the top, as a full page load would. */
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => window.scrollTo(0, 0), [pathname])
+  return null
+}
+
 function NotFound() {
   const { pathname } = useLocation()
   return (
@@ -68,6 +80,7 @@ function NotFound() {
 export default function App() {
   return (
     <div className="flex min-h-dvh flex-col">
+      <ScrollToTop />
       <Header />
       <main className="flex-1">
         <Routes>
@@ -75,6 +88,14 @@ export default function App() {
           <Route path="/board" element={<Generator />} />
           <Route path="/import" element={<Import />} />
           <Route path="/position" element={<Position />} />
+          <Route
+            path="/play/*"
+            element={
+              <Suspense fallback={<p className="px-4 py-24 text-center text-sea-200">Setting up the table…</p>}>
+                <Play />
+              </Suspense>
+            }
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

@@ -1,0 +1,40 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "games",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "seatUids", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "games",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "visibility", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "games",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "authority", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "deadline", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": [
+    { "collectionGroup": "games", "fieldPath": "state", "indexes": [] },
+    { "collectionGroup": "games", "fieldPath": "view", "indexes": [] },
+    { "collectionGroup": "games", "fieldPath": "setup", "indexes": [] },
+    { "collectionGroup": "views", "fieldPath": "state", "indexes": [] },
+    { "collectionGroup": "secret", "fieldPath": "state", "indexes": [] },
+    { "collectionGroup": "log", "fieldPath": "initial", "indexes": [] },
+    { "collectionGroup": "log", "fieldPath": "draws", "indexes": [] },
+    { "collectionGroup": "log", "fieldPath": "action", "indexes": [] }
+  ]
+}

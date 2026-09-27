@@ -55,6 +55,13 @@ export function Home() {
             >
               Generate a board
             </Link>
+            <Link
+              to="/play"
+              className="rounded-xl border border-sea-400/50 bg-sea-400/15 px-5 py-3 font-display font-semibold
+                         transition hover:bg-sea-400/25"
+            >
+              Play online
+            </Link>
             <a
               href={asset('rules/base-game.jpg')}
               target="_blank"

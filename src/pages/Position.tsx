@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { BoardEditor } from '../components/BoardEditor'
 import { PositionBoard, type Tool } from '../components/PositionBoard'
 import { newGame } from '../lib/board'
@@ -624,6 +624,11 @@ export function Position() {
                            transition hover:bg-white/10">
                 {copied === 'csn' ? 'Copied' : 'Copy notation'}
               </button>
+              <Link to={`/play/new?${query}`}
+                className="rounded-xl border border-sea-400/50 bg-sea-400/15 px-4 py-2 font-display font-semibold
+                           transition hover:bg-sea-400/25">
+                Play from this position
+              </Link>
             </div>
             <pre className="max-h-60 overflow-auto rounded-xl border border-white/10 bg-black/40 p-3
                             font-mono text-[0.7rem] leading-relaxed whitespace-pre-wrap break-all text-sea-100">

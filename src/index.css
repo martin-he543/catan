@@ -20,6 +20,10 @@
   --color-player-blue: #0a87ff;
   --color-player-yellow: #ffd60a;
   --color-player-white: #f8fafc;
+  --color-player-green: #30d158;
+  --color-player-brown: #a2744a;
+  --color-player-purple: #bf5af2;
+  --color-player-pink: #ff6fb5;
 }
 
 @layer base {

@@ -215,6 +215,12 @@ export function Sidebar({
           Share &amp; reference
         </h2>
         <div className="mt-3 space-y-2">
+          <Link
+            to={`/play/new${fullUrl.slice(fullUrl.indexOf('?'))}`}
+            className="block rounded-lg bg-sea-400 px-3 py-2 text-sm font-semibold text-sea-950 transition hover:brightness-110"
+          >
+            Play this board online
+          </Link>
           <CopyButton label="Share board" url={boardUrl} />
           <CopyButton label="Share with placements" url={fullUrl} />
           <button

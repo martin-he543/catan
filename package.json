@@ -9,11 +9,16 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "oxlint"
+    "lint": "oxlint",
+    "emulators": "npm --prefix functions run build && firebase emulators:start --project demo-catan",
+    "test:emulators": "npm --prefix functions run build && firebase emulators:exec --project demo-catan --only auth,firestore,functions \"FIREBASE_EMULATORS=1 vitest run src/game/net\"",
+    "deploy:firebase": "npm --prefix functions run build && firebase deploy --only firestore,functions",
+    "deploy:rules": "firebase deploy --only firestore"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",
     "@google/genai": "^2.24.0",
+    "firebase": "^12.19.0",
     "motion": "^13.4.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
@@ -32,5 +37,5 @@
     "vite": "^8.3.0",
     "vitest": "^5.0.2"
   },
-  "description": "Settlers of Catan board generator, opening-placement helper and dice roller."
+  "description": "Settlers of Catan board generator, opening-placement helper, dice roller and online play."
 }

@@ -32,6 +32,19 @@ jobs:
       - run: npm run lint
 
       - name: Build
+        # Online play reads its Firebase settings from the repository's Actions
+        # variables (Settings → Secrets and variables → Actions → Variables).
+        # Left unset, the site still builds; the Play page then offers local
+        # games and a box to paste settings into. See FIREBASE_SETUP.md.
+        env:
+          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_AUTHORITY: ${{ vars.VITE_FIREBASE_AUTHORITY }}
+          VITE_FIREBASE_FUNCTIONS_REGION: ${{ vars.VITE_FIREBASE_FUNCTIONS_REGION }}
         # Project sites live at /<repo>/; user sites (<user>.github.io) live at /.
         run: |
           if [[ "${GITHUB_REPOSITORY#*/}" == "${GITHUB_REPOSITORY_OWNER}.github.io" ]]; then

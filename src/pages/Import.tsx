@@ -397,6 +397,13 @@ export function Import() {
               >
                 Open in the board generator
               </Link>
+              <Link
+                to={`/play/new?b=${encodeURIComponent(encodeGame({ tiles, ports, portShifts, locs: [] }))}`}
+                className="rounded-xl border border-sea-400/50 bg-sea-400/15 px-5 py-3 font-display font-semibold
+                           transition hover:bg-sea-400/25"
+              >
+                Play it online
+              </Link>
               <button
                 type="button"
                 onClick={copy}

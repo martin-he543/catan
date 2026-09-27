@@ -8,4 +8,8 @@ import { githubPagesAssets } from './github-pages-assets.js'
 export default defineConfig({
   base: process.env.VITE_BASE ?? '/',
   plugins: [react(), tailwindcss(), githubPagesAssets()],
+  build: {
+    // Firestore's SDK is a single ~550 kB chunk, loaded only by the Play pages.
+    chunkSizeWarningLimit: 600,
+  },
 })

@@ -1,0 +1,24 @@
+{
+  "name": "catan-functions",
+  "private": true,
+  "description": "Cloud Functions that referee online Catan games when VITE_FIREBASE_AUTHORITY=server.",
+  "main": "lib/index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node22 --format=cjs --outfile=lib/index.js --external:firebase-admin --external:firebase-functions",
+    "typecheck": "tsc --noEmit",
+    "serve": "npm run build && firebase emulators:start --only functions,firestore,auth",
+    "deploy": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0",
+    "firebase-functions": "^7.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.0",
+    "esbuild": "^0.27.0",
+    "typescript": "~6.0.2"
+  }
+}
