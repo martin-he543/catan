@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
   HEX_CENTERS,
+  COAST,
   PORTS,
+  canShiftPort,
+  portShiftsValid,
+  portsFor,
+  rotatePorts,
+  shiftPort,
   SEA_CENTERS,
   TILE_NEIGHBOURS,
   VERTEX_NEIGHBOURS,
@@ -74,5 +80,50 @@ describe('board geometry', () => {
       // Both corners of a port edge must be real settlement corners.
       for (const v of port.vertices) expect(VERTICES[v]).toBeDefined()
     }
+  })
+})
+
+describe('port nudges', () => {
+  it('finds all 30 shoreline edges, and leaves the standard layout untouched', () => {
+    expect(COAST).toHaveLength(30)
+    expect(new Set(COAST.map((e) => `${e.tile}-${e.dir}`)).size).toBe(30)
+    expect(portsFor()).toBe(PORTS)
+    expect(portsFor(PORTS.map(() => 0))).toBe(PORTS)
+  })
+
+  it('moves a port to the neighbouring shore edge, sharing one corner with where it was', () => {
+    for (let i = 0; i < PORTS.length; i++) {
+      for (const delta of [-1, 1]) {
+        if (!canShiftPort(undefined, i, delta)) continue
+        const moved = portsFor(shiftPort(undefined, i, delta))[i]
+        expect(moved.coast).toBe((PORTS[i].coast + delta + 30) % 30)
+        const shared = moved.vertices.filter((v) => PORTS[i].vertices.includes(v))
+        expect(shared).toHaveLength(1)
+      }
+    }
+  })
+
+  it('never lets two ports share a corner, and caps a nudge at one edge', () => {
+    let shifts = shiftPort(undefined, 0, 1)
+    expect(shiftPort(shifts, 0, 1)).toEqual(shifts)
+    shifts = shiftPort(shifts, 1, -1)
+    expect(portShiftsValid(shifts)).toBe(true)
+    const ports = portsFor(shifts)
+    const corners = ports.flatMap((p) => p.vertices)
+    expect(new Set(corners).size).toBe(corners.length)
+  })
+})
+
+describe('rotating every port', () => {
+  it('moves all nine ports one edge together, at most one edge each way', () => {
+    const right = rotatePorts(undefined, 1)
+    expect(right).toEqual(PORTS.map(() => 1))
+    expect(portShiftsValid(right)).toBe(true)
+    expect(rotatePorts(right, 1)).toEqual(right)
+    expect(rotatePorts(right, -1)).toBeUndefined()
+    expect(rotatePorts(rotatePorts(undefined, -1), -1)).toEqual(PORTS.map(() => -1))
+    portsFor(right).forEach((p, i) => {
+      expect(p.coast).toBe((PORTS[i].coast + 1) % COAST.length)
+    })
   })
 })

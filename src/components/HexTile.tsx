@@ -18,7 +18,10 @@ interface Props {
 export function HexTile({ center, tile, dimmed, highlighted, sea }: Props) {
   const { left, top } = toPercent(center)
   const type = sea ? 'sea' : (tile?.type ?? 'desert')
-  const showToken = !sea && tile && tile.type !== 'desert'
+  const blank = !sea && tile?.blank
+  const showToken = !sea && tile && !tile.blank && tile.type !== 'desert'
+  // A board being typed in carries 0 for "no token chosen yet".
+  const unknownNumber = tile?.number === 0
   const isRed = tile?.number === 6 || tile?.number === 8
 
   return (
@@ -33,16 +36,28 @@ export function HexTile({ center, tile, dimmed, highlighted, sea }: Props) {
         opacity: dimmed ? 0.5 : 1,
       }}
     >
-      <img
-        src={tileImage(type)}
-        alt=""
-        draggable={false}
-        className="h-full w-full object-cover select-none"
-        style={{
-          clipPath: HEX_CLIP,
-          filter: highlighted ? 'brightness(1.18) saturate(1.15)' : undefined,
-        }}
-      />
+      {blank ? (
+        // Terrain not chosen yet: a plain grey hex, like an unpainted tile.
+        <div
+          className="h-full w-full"
+          style={{
+            clipPath: HEX_CLIP,
+            background: 'radial-gradient(circle at 50% 40%, #a8a29e, #78716c)',
+            filter: highlighted ? 'brightness(1.18)' : undefined,
+          }}
+        />
+      ) : (
+        <img
+          src={tileImage(type)}
+          alt=""
+          draggable={false}
+          className="h-full w-full object-cover select-none"
+          style={{
+            clipPath: HEX_CLIP,
+            filter: highlighted ? 'brightness(1.18) saturate(1.15)' : undefined,
+          }}
+        />
+      )}
 
       {showToken && (
         <div
@@ -53,14 +68,14 @@ export function HexTile({ center, tile, dimmed, highlighted, sea }: Props) {
             width: '40%',
             aspectRatio: '1',
             border: '0.18em solid var(--color-parchment-edge)',
-            color: isRed ? '#b91c1c' : '#1c1917',
+            color: isRed ? '#b91c1c' : unknownNumber ? '#78716c' : '#1c1917',
           }}
         >
           <span
             className="font-display font-bold leading-none"
             style={{ fontSize: 'clamp(0.6rem, 2.1cqw, 1.6rem)' }}
           >
-            {tile.number}
+            {unknownNumber ? '?' : tile.number}
           </span>
           <span
             className="leading-none tracking-[0.08em]"
@@ -70,7 +85,7 @@ export function HexTile({ center, tile, dimmed, highlighted, sea }: Props) {
             {'·'.repeat(pips(tile.number))}
           </span>
           <span className="sr-only">
-            {pips(tile.number)} pips
+            {unknownNumber ? 'no number yet' : `${pips(tile.number)} pips`}
           </span>
         </div>
       )}

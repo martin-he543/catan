@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { decodeGame, decodeMoves, encodeGame, encodeMoves } from '../codec'
 import { newGame } from '../board'
+import { blankBoard, boardProblems } from '../vision'
+import { parseBoard, serializeBoard } from '../notation'
 import type { GameType } from '../types'
 
 const TYPES: GameType[] = ['spiral', 'pseudorandom', 'random']
@@ -42,5 +44,32 @@ describe('share-link codec', () => {
   it('treats a truncated moves code as no placements', () => {
     expect(decodeMoves('')).toEqual([])
     expect(decodeMoves('##')).toEqual([])
+  })
+
+  it('round-trips nudged ports and leaves unnudged codes at the legacy length', () => {
+    const game = newGame('spiral')
+    const plain = encodeGame(game)
+    expect(plain).toHaveLength(27)
+    expect(encodeGame({ ...game, portShifts: [0, 0, 0, 0, 0, 0, 0, 0, 0] })).toBe(plain)
+
+    const portShifts = [1, 0, -1, 0, 0, 1, 0, 0, 0]
+    const decoded = decodeGame(encodeGame({ ...game, portShifts }))
+    expect(decoded!.tiles).toEqual(game.tiles)
+    expect(decoded!.ports).toEqual(game.ports)
+    expect(decoded!.portShifts).toEqual(portShifts)
+    expect(decodeGame(plain)!.portShifts).toBeUndefined()
+  })
+})
+
+describe('blank boards', () => {
+  it('keep their grey tiles through a share link and through notation', () => {
+    const game = { ...newGame('spiral'), locs: [] }
+    game.tiles = game.tiles.map((t, i) => (i % 3 === 0 ? blankBoard()[i] : t))
+    expect(decodeGame(encodeGame(game))!.tiles).toEqual(game.tiles)
+    expect(parseBoard(serializeBoard(game.tiles))).toEqual(game.tiles)
+  })
+
+  it('ask for terrain rather than listing every missing tile type', () => {
+    expect(boardProblems(blankBoard())).toEqual(['19 tiles still need a terrain'])
   })
 })

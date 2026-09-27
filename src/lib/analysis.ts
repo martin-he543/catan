@@ -2,7 +2,7 @@
  * Settlement scoring. The original site let you click corners but never told
  * you whether a corner was any good; this works that out.
  */
-import { PORTS, PORTS_BY_VERTEX, VERTEX_NEIGHBOURS, VERTICES } from './geometry'
+import { PORTS, VERTEX_NEIGHBOURS, VERTICES, portsByVertex, portsFor } from './geometry'
 import type { Game, PortType, ResourceType } from './types'
 
 /** Dots on the number token — ways to roll it out of 36. */
@@ -35,6 +35,7 @@ export function legalVertices(locs: number[]): Set<number> {
 }
 
 export function analyseBoard(game: Game): VertexReport[] {
+  const portsAt = portsByVertex(portsFor(game.portShifts))
   const raw = VERTICES.map((vertex) => {
     const byResource: Partial<Record<ResourceType, number>> = {}
     let total = 0
@@ -47,7 +48,7 @@ export function analyseBoard(game: Game): VertexReport[] {
       total += value
     }
 
-    const portIndex = PORTS_BY_VERTEX[vertex.index][0]
+    const portIndex = portsAt[vertex.index][0]
     return {
       vertex: vertex.index,
       pips: total,

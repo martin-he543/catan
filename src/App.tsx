@@ -1,10 +1,14 @@
 import { Link, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { Home } from './pages/Home'
 import { Generator } from './pages/Generator'
+import { Import } from './pages/Import'
+import { Position } from './pages/Position'
 
 const NAV = [
   { to: '/', label: 'Resources', end: true },
   { to: '/board', label: 'Board generator', end: false },
+  { to: '/import', label: 'Import Catan', end: false },
+  { to: '/position', label: 'Position', end: false },
 ]
 
 function Header() {
@@ -14,7 +18,7 @@ function Header() {
         <Link to="/" className="shrink-0 font-display font-bold tracking-tight whitespace-nowrap">
           Catan <span className="text-sea-400" aria-hidden>⬢</span>
         </Link>
-        <nav className="flex gap-1 text-sm" aria-label="Main">
+        <nav className="-mx-1 flex min-w-0 gap-1 overflow-x-auto px-1 text-sm" aria-label="Main">
           {NAV.map((item) => (
             <NavLink
               key={item.to}
@@ -69,6 +73,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/board" element={<Generator />} />
+          <Route path="/import" element={<Import />} />
+          <Route path="/position" element={<Position />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

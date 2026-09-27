@@ -161,6 +161,8 @@ export interface Port {
   /** Land tile the port's jetty points at. */
   tile: number
   dir: EdgeDir
+  /** Position of this edge in `COAST`, the clockwise ring of shoreline edges. */
+  coast: number
   /** Centre of the port marker, already pushed out over the water. */
   pos: Point
   /** Degrees of rotation so the jetty faces the island. */
@@ -168,6 +170,31 @@ export interface Port {
   /** The two settlement corners that can claim this port. */
   vertices: [number, number]
 }
+
+const EDGE_DIRS = Object.keys(EDGE_VERTICES) as EdgeDir[]
+
+/**
+ * The 30 shoreline edges, clockwise from the top of the board. An edge is on
+ * the shore when the hex across it is not land.
+ */
+export const COAST: Array<{ tile: number; dir: EdgeDir }> = (() => {
+  const land = new Set(HEX_CENTERS.map(key))
+  const out: Array<{ tile: number; dir: EdgeDir; turn: number }> = []
+  HEX_CENTERS.forEach((c, tile) => {
+    for (const dir of EDGE_DIRS) {
+      const [i, j] = EDGE_VERTICES[dir]
+      const mid = {
+        x: c.x + (VERTEX_OFFSETS[i].x + VERTEX_OFFSETS[j].x) / 2,
+        y: c.y + (VERTEX_OFFSETS[i].y + VERTEX_OFFSETS[j].y) / 2,
+      }
+      if (land.has(key({ x: 2 * mid.x - c.x, y: 2 * mid.y - c.y }))) continue
+      // The island is star-shaped about its centre, so bearing orders the shore.
+      const turn = Math.atan2(mid.x, -mid.y)
+      out.push({ tile, dir, turn: turn < -1e-9 ? turn + 2 * Math.PI : turn })
+    }
+  })
+  return out.sort((a, b) => a.turn - b.turn).map(({ tile, dir }) => ({ tile, dir }))
+})()
 
 /**
  * The nine standard port edges, recovered from the original stylesheet's
@@ -185,10 +212,15 @@ const PORT_EDGES: Array<{ tile: number; dir: EdgeDir }> = [
   { tile: 15, dir: 'se' },
 ]
 
+const DEFAULT_PORT_COAST = PORT_EDGES.map(({ tile, dir }) =>
+  COAST.findIndex((e) => e.tile === tile && e.dir === dir),
+)
+
 /** How far past the coastline the port marker sits, in layout units. */
 const PORT_OFFSET = 0.42
 
-export const PORTS: Port[] = PORT_EDGES.map(({ tile, dir }) => {
+function buildPort(coast: number): Port {
+  const { tile, dir } = COAST[coast]
   const c = HEX_CENTERS[tile]
   const [i, j] = EDGE_VERTICES[dir]
   const a = { x: c.x + VERTEX_OFFSETS[i].x, y: c.y + VERTEX_OFFSETS[i].y }
@@ -199,6 +231,7 @@ export const PORTS: Port[] = PORT_EDGES.map(({ tile, dir }) => {
   return {
     tile,
     dir,
+    coast,
     pos: {
       x: mid.x + (out.x / len) * PORT_OFFSET,
       y: mid.y + (out.y / len) * PORT_OFFSET,
@@ -210,11 +243,101 @@ export const PORTS: Port[] = PORT_EDGES.map(({ tile, dir }) => {
       VERTEX_INDEX_BY_KEY.get(key(b))!,
     ],
   }
-})
+}
+
+/** The nine ports in their standard spots. */
+export const PORTS: Port[] = DEFAULT_PORT_COAST.map(buildPort)
+
+/**
+ * Printed boards don't all agree on which way each harbour faces, so any port
+ * may be nudged one shoreline edge either way: -1 is anticlockwise, +1
+ * clockwise. Nothing shifted is the standard layout.
+ */
+export const NO_PORT_SHIFTS: readonly number[] = PORTS.map(() => 0)
+
+const shiftAt = (shifts: readonly number[] | undefined, i: number) =>
+  Math.max(-1, Math.min(1, Math.trunc(shifts?.[i] ?? 0)))
+
+const coastOf = (shifts: readonly number[] | undefined, i: number) =>
+  (DEFAULT_PORT_COAST[i] + shiftAt(shifts, i) + COAST.length) % COAST.length
+
+/** Shoreline steps between two coast positions, whichever way round is shorter. */
+const coastGap = (a: number, b: number) => {
+  const d = Math.abs(a - b) % COAST.length
+  return Math.min(d, COAST.length - d)
+}
+
+/** Two ports may not share a corner, so they must sit at least two edges apart. */
+export function portShiftsValid(shifts: readonly number[] | undefined): boolean {
+  const at = PORTS.map((_, i) => coastOf(shifts, i))
+  return at.every((a, i) => at.every((b, j) => i === j || coastGap(a, b) >= 2))
+}
+
+/** Whether port `i` can move `delta` edges without crowding another port. */
+export function canShiftPort(shifts: readonly number[] | undefined, i: number, delta: number): boolean {
+  const next = shiftAt(shifts, i) + delta
+  if (next < -1 || next > 1) return false
+  const trial = PORTS.map((_, j) => (j === i ? next : shiftAt(shifts, j)))
+  return portShiftsValid(trial)
+}
+
+/** `shifts` with port `i` moved `delta` edges, or unchanged if it can't move. */
+export function shiftPort(shifts: readonly number[] | undefined, i: number, delta: number): number[] {
+  const base = PORTS.map((_, j) => shiftAt(shifts, j))
+  if (!canShiftPort(base, i, delta)) return base
+  base[i] += delta
+  return base
+}
+
+/**
+ * How far the whole ring of ports is turned: -1 anticlockwise, +1 clockwise.
+ * Ports nudged by different amounts count as not turned.
+ */
+export function portRotation(shifts: readonly number[] | undefined): number {
+  const first = shiftAt(shifts, 0)
+  return PORTS.every((_, i) => shiftAt(shifts, i) === first) ? first : 0
+}
+
+/** Whether every port can slide `delta` more edges along the shore. */
+export const canRotatePorts = (shifts: readonly number[] | undefined, delta: number) =>
+  Math.abs(portRotation(shifts) + delta) <= 1
+
+/**
+ * Every port slid `delta` edges along the shore together, or unchanged if
+ * that would go past one edge. Undefined is the standard layout.
+ */
+export function rotatePorts(shifts: readonly number[] | undefined, delta: number): number[] | undefined {
+  if (!canRotatePorts(shifts, delta)) return shifts ? [...shifts] : undefined
+  const next = portRotation(shifts) + delta
+  return next === 0 ? undefined : PORTS.map(() => next)
+}
+
+export const hasPortShifts = (shifts: readonly number[] | undefined) =>
+  PORTS.some((_, i) => shiftAt(shifts, i) !== 0)
+
+const portsCache = new Map<string, Port[]>()
+
+/** The nine ports with `shifts` applied. Returns the same array for the same shifts. */
+export function portsFor(shifts?: readonly number[]): Port[] {
+  if (!hasPortShifts(shifts)) return PORTS
+  const cacheKey = PORTS.map((_, i) => shiftAt(shifts, i)).join(',')
+  let ports = portsCache.get(cacheKey)
+  if (!ports) {
+    ports = PORTS.map((_, i) => buildPort(coastOf(shifts, i)))
+    portsCache.set(cacheKey, ports)
+  }
+  return ports
+}
 
 /** Ports reachable from each settlement corner. */
-export const PORTS_BY_VERTEX: number[][] = VERTICES.map(() => [])
-PORTS.forEach((p, i) => p.vertices.forEach((v) => PORTS_BY_VERTEX[v].push(i)))
+export function portsByVertex(ports: readonly Port[]): number[][] {
+  const out: number[][] = VERTICES.map(() => [])
+  ports.forEach((p, i) => p.vertices.forEach((v) => out[v].push(i)))
+  return out
+}
+
+/** Ports reachable from each settlement corner, in the standard layout. */
+export const PORTS_BY_VERTEX: number[][] = portsByVertex(PORTS)
 
 /** Bounding box of everything we draw, with a little breathing room. */
 export const VIEW = (() => {

@@ -19,11 +19,21 @@ export interface Tile {
   type: TileType
   /** 2-12; the desert carries 7, which is never rolled onto a tile. */
   number: number
+  /**
+   * Terrain not chosen yet: the tile shows grey, and `type`/`number` are a
+   * desert placeholder so nothing asks it for a number token.
+   */
+  blank?: boolean
 }
 
 export interface Game {
   tiles: Tile[]
   ports: PortType[]
+  /**
+   * Per-port nudge along the shore (-1, 0 or +1 edge), matching `ports` by
+   * index. Missing means the standard layout.
+   */
+  portShifts?: number[]
   /** Vertex indices (0-53) of placed settlements, in placement order. */
   locs: number[]
 }

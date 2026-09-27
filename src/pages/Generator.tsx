@@ -6,6 +6,7 @@ import { DiceRoller } from '../components/DiceRoller'
 import { newGame } from '../lib/board'
 import { decodeGame, decodeMoves, encodeGame, encodeMoves } from '../lib/codec'
 import { analyseBoard, legalVertices } from '../lib/analysis'
+import { PortShifter } from '../components/PortMarker'
 import { PLACEMENT_ORDER, type Game, type GameType } from '../lib/types'
 
 const GAME_TYPES: GameType[] = ['spiral', 'pseudorandom', 'random']
@@ -58,7 +59,8 @@ export function Generator() {
   }, [code, game.locs, type, setParams])
 
   const generate = useCallback((nextType: GameType) => {
-    setState({ game: newGame(nextType), type: nextType })
+    // Port nudges describe the physical board, so they outlive a reshuffle.
+    setState((s) => ({ game: { ...newGame(nextType), portShifts: s.game.portShifts }, type: nextType }))
     setHovered(null)
   }, [])
 
@@ -106,7 +108,13 @@ export function Generator() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
       <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-        <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-2 text-sm">
+            <PortShifter
+              shifts={game.portShifts}
+              onShift={(portShifts) => setState((s) => ({ ...s, game: { ...s.game, portShifts } }))}
+            />
+          </div>
           <Board
             game={game}
             reports={reports}

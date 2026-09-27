@@ -1,15 +1,13 @@
 import { pctH, pctW, toPercent, VERTICES } from '../lib/geometry'
 import type { VertexReport } from '../lib/analysis'
+import { pieceImage } from '../lib/assets'
 import type { PlayerColor } from '../lib/types'
 
 const SIZE = 0.2
 
-const COLOR_STYLES: Record<PlayerColor, string> = {
-  red: 'bg-player-red border-red-900',
-  blue: 'bg-player-blue border-blue-900',
-  yellow: 'bg-player-yellow border-yellow-800',
-  white: 'bg-player-white border-slate-500',
-}
+/** A placed settlement, in layout units; matches the Position board. */
+const PIECE_SIZE = 0.28
+const PIECE_DROP = 0.08
 
 interface Props {
   index: number
@@ -45,12 +43,24 @@ export function SettlementSpot({
   }
 
   if (owner) {
+    // Same artwork and footing as the Position board: the base sits just below the corner.
+    const at = toPercent({ x: VERTICES[index].x, y: VERTICES[index].y + PIECE_DROP - PIECE_SIZE / 2 })
     return (
-      <div
-        className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-[18%] border
-                    shadow-[0_2px_5px_rgba(0,0,0,0.55)] ${COLOR_STYLES[owner]}
-                    ${isFirstRound ? 'ring-2 ring-black/70' : ''}`}
-        style={common}
+      <img
+        src={pieceImage('settlement', owner)}
+        alt=""
+        draggable={false}
+        className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 select-none"
+        style={{
+          left: `${at.left}%`,
+          top: `${at.top}%`,
+          width: `${pctW(PIECE_SIZE)}%`,
+          height: `${pctH(PIECE_SIZE)}%`,
+          // First-round settlements get a dark rim, as on the original site.
+          filter: isFirstRound
+            ? 'drop-shadow(0 0 1.5px rgba(0,0,0,0.9)) drop-shadow(1px 2px 2px rgba(0,0,0,0.55))'
+            : 'drop-shadow(1px 2px 2px rgba(0,0,0,0.55))',
+        }}
         title={`${owner} · ${report.pips} pips`}
       />
     )

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { HEX_CENTERS, PORTS, SEA_CENTERS, VERTICES, VIEW } from '../lib/geometry'
+import { HEX_CENTERS, SEA_CENTERS, VERTICES, VIEW, portsFor } from '../lib/geometry'
 import { legalVertices, type VertexReport } from '../lib/analysis'
 import { HexTile } from './HexTile'
 import { PortMarker } from './PortMarker'
@@ -16,6 +16,7 @@ interface Props {
 }
 
 export function Board({ game, reports, showRatings, hovered, onHover, onSelect }: Props) {
+  const ports = portsFor(game.portShifts)
   const legal = useMemo(() => legalVertices(game.locs), [game.locs])
   const placingDone = game.locs.length >= PLACEMENT_ORDER.length
 
@@ -29,9 +30,9 @@ export function Board({ game, reports, showRatings, hovered, onHover, onSelect }
       hovered === null
         ? null
         : new Set(
-            PORTS.flatMap((p, i) => (p.vertices.includes(hovered) ? [i] : [])),
+            ports.flatMap((p, i) => (p.vertices.includes(hovered) ? [i] : [])),
           ),
-    [hovered],
+    [hovered, ports],
   )
 
   return (
@@ -53,7 +54,7 @@ export function Board({ game, reports, showRatings, hovered, onHover, onSelect }
         />
       ))}
 
-      {PORTS.map((port, i) => (
+      {ports.map((port, i) => (
         <PortMarker
           key={`port-${i}`}
           port={port}

@@ -12,6 +12,8 @@
     "lint": "oxlint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
+    "@google/genai": "^2.24.0",
     "motion": "^13.4.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

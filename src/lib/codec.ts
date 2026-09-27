@@ -3,8 +3,12 @@
  * that links minted years ago still open the same board here.
  *
  * Layout: 19 tiles x 7 bits (3 type + 4 number), then 9 ports x 3 bits.
+ * Type 7 marks a tile whose terrain hasn't been chosen yet.
+ * Boards with nudged ports put 9 x 2 bits of shifts in front; codes without
+ * them are exactly the old length, so old links and old boards still agree.
  * Moves: 8 slots x 6 bits, with 63 meaning "not placed yet".
  */
+import { hasPortShifts, portShiftsValid } from './geometry'
 import { PORT_TYPES, TILE_TYPES, type Game, type PortType, type Tile, type TileType } from './types'
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
@@ -15,7 +19,11 @@ const MOVE_BITS = 6
 const MOVE_SLOTS = 8
 const NO_MOVE = 63
 
+const BLANK_TYPE = 7
+
+const SHIFT_BITS = 2
 const GAME_BIT_LENGTH = 19 * TILE_BITS + 9 * PORT_BITS
+const SHIFTED_BIT_LENGTH = GAME_BIT_LENGTH + 9 * SHIFT_BITS
 const MOVES_BIT_LENGTH = MOVE_SLOTS * MOVE_BITS
 
 const pad = (value: number, width: number) => value.toString(2).padStart(width, '0')
@@ -41,8 +49,12 @@ function fromBase64(text: string): string {
 
 export function encodeGame(game: Game): string {
   if (game.tiles.length !== 19 || game.ports.length !== 9) return ''
+  const shifts = hasPortShifts(game.portShifts)
+    ? game.ports.map((_, i) => pad((game.portShifts?.[i] ?? 0) + 1, SHIFT_BITS)).join('')
+    : ''
   const binary =
-    game.tiles.map((t) => pad(TILE_TYPES.indexOf(t.type), 3) + pad(t.number, 4)).join('') +
+    shifts +
+    game.tiles.map((t) => pad(t.blank ? BLANK_TYPE : TILE_TYPES.indexOf(t.type), 3) + pad(t.number, 4)).join('') +
     game.ports.map((p) => pad(PORT_TYPES.indexOf(p), 3)).join('')
   return toBase64(binary)
 }
@@ -55,7 +67,12 @@ export function decodeGame(code: string): Game | null {
   const tiles: Tile[] = []
   for (let i = 0; i < 19; i++) {
     const slice = binary.slice(i * TILE_BITS, (i + 1) * TILE_BITS)
-    const type = TILE_TYPES[parseInt(slice.slice(0, 3), 2)] as TileType | undefined
+    const index = parseInt(slice.slice(0, 3), 2)
+    if (index === BLANK_TYPE) {
+      tiles.push({ type: 'desert', number: 7, blank: true })
+      continue
+    }
+    const type = TILE_TYPES[index] as TileType | undefined
     const number = parseInt(slice.slice(3), 2)
     if (!type || Number.isNaN(number)) return null
     tiles.push({ type, number })
@@ -71,7 +88,16 @@ export function decodeGame(code: string): Game | null {
     ports.push(type)
   }
 
-  return { tiles, ports, locs: [] }
+  const game: Game = { tiles, ports, locs: [] }
+  if (bits.length >= SHIFTED_BIT_LENGTH) {
+    const head = bits.slice(bits.length - SHIFTED_BIT_LENGTH, bits.length - GAME_BIT_LENGTH)
+    const shifts = ports.map((_, i) => {
+      const value = parseInt(head.slice(i * SHIFT_BITS, (i + 1) * SHIFT_BITS), 2) - 1
+      return value >= -1 && value <= 1 ? value : 0
+    })
+    if (hasPortShifts(shifts) && portShiftsValid(shifts)) game.portShifts = shifts
+  }
+  return game
 }
 
 export function encodeMoves(locs: number[]): string {
