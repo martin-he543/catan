@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Pulled from the tile art so the chrome matches the board. */
+  --color-sea-50: #e6f6fd;
+  --color-sea-200: #9adcf5;
+  --color-sea-400: #34b3e4;
+  --color-sea-500: #1691c6;
+  --color-sea-700: #0d5e85;
+  --color-sea-900: #062f45;
+  --color-sea-950: #041d2b;
+
+  --color-parchment: #e9d49d;
+  --color-parchment-edge: #ad9d75;
+
+  --color-player-red: #ff453a;
+  --color-player-blue: #0a87ff;
+  --color-player-yellow: #ffd60a;
+  --color-player-white: #f8fafc;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-sea-950 text-sea-50 font-sans antialiased;
+  }
+
+  /* The deep-ocean backdrop the whole site floats on. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% -10%, var(--color-sea-700), transparent 70%),
+      radial-gradient(ellipse 60% 50% at 10% 100%, #0b4a6b, transparent 70%),
+      linear-gradient(180deg, var(--color-sea-950), #02131d);
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-sea-200;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

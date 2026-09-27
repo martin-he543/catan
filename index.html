@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Settlers of Catan ⬢ Board Generator</title>
+    <meta
+      name="description"
+      content="Generate randomised Settlers of Catan boards, weigh up opening placements, roll the dice, and share the result. Plus house variants and the Hanover House leaderboard."
+    />
+    <meta name="theme-color" content="#041d2b" />
+
+    <meta property="og:title" content="Settlers of Catan ⬢ Board Generator" />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:description"
+      content="Generate randomised Catan boards, weigh up opening placements, and share them. Challenge someone to do better."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" href="/favicon/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+    <link rel="mask-icon" href="/favicon/safari-pinned-tab.svg" color="#1691c6" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // Unpack a deep link that 404.html bounced through the app root, so the
+      // router sees the URL the visitor actually asked for.
+      (function () {
+        var params = new URLSearchParams(location.search)
+        var redirect = params.get('redirect')
+        if (redirect && redirect.charAt(0) === '/' && redirect.charAt(1) !== '/') {
+          history.replaceState(null, '', redirect)
+        }
+      })()
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
