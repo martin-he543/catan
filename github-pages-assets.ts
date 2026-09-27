@@ -16,6 +16,13 @@ export function githubPagesAssets(): Plugin {
     configResolved(config) {
       base = config.base
     },
+    // The dev server has no bundle to emit into, so serve the manifest directly.
+    configureServer(server) {
+      server.middlewares.use(`${base}site.webmanifest`, (_req, res) => {
+        res.setHeader('Content-Type', 'application/manifest+json')
+        res.end(manifest(base))
+      })
+    },
     // Vite rewrites icon hrefs in index.html for the base path but not
     // rel="manifest", so inject that one ourselves.
     transformIndexHtml() {
@@ -49,34 +56,34 @@ export function githubPagesAssets(): Plugin {
 `,
       })
 
-      this.emitFile({
-        type: 'asset',
-        fileName: 'site.webmanifest',
-        source: JSON.stringify(
-          {
-            name: 'Settlers of Catan Board Generator',
-            short_name: 'Catan',
-            icons: [
-              {
-                src: `${base}favicon/android-chrome-192x192.png`,
-                sizes: '192x192',
-                type: 'image/png',
-              },
-              {
-                src: `${base}favicon/android-chrome-512x512.png`,
-                sizes: '512x512',
-                type: 'image/png',
-              },
-            ],
-            start_url: base,
-            theme_color: '#041d2b',
-            background_color: '#041d2b',
-            display: 'standalone',
-          },
-          null,
-          2,
-        ),
-      })
+      this.emitFile({ type: 'asset', fileName: 'site.webmanifest', source: manifest(base) })
     },
   }
+}
+
+function manifest(base: string) {
+  return JSON.stringify(
+    {
+      name: 'Settlers of Catan Board Generator',
+      short_name: 'Catan',
+      icons: [
+        {
+          src: `${base}favicon/android-chrome-192x192.png`,
+          sizes: '192x192',
+          type: 'image/png',
+        },
+        {
+          src: `${base}favicon/android-chrome-512x512.png`,
+          sizes: '512x512',
+          type: 'image/png',
+        },
+      ],
+      start_url: base,
+      theme_color: '#041d2b',
+      background_color: '#041d2b',
+      display: 'standalone',
+    },
+    null,
+    2,
+  )
 }

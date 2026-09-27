@@ -182,7 +182,7 @@ VITE_FIREBASE_AUTHORITY=client
 npm run dev
 ```
 
-Open <http://localhost:5173/play>. The lobby should say *Connected to
+Open <http://localhost:9121/play>. The lobby should say *Connected to
 catan-online-1a2b3*. Create a table, copy the invite link, and open it in a
 private window to join as a second player.
 
@@ -413,6 +413,7 @@ Storage is tiny: a finished game with its full log is well under 1 MB.
 | Starting a server-refereed game fails with *not-found* or *internal* | The functions aren't deployed, or are in a different region from `VITE_FIREBASE_FUNCTIONS_REGION`. |
 | Bots don't move (client authority) | Bots are played by the browsers of the seated humans, so at least one person at the table must have the game open. |
 | Turn timer ran out and nothing happened | Under client authority, time is called by a seated player's open browser. Under server authority, the sweep runs every five minutes. |
+| A *Firebase Hosting Setup Complete* page instead of the app | `firebase init hosting` was run over the project and wrote a placeholder `index.html`. Don't re-run it — `firebase.json` is already set up. `git checkout firebase.json`, delete the placeholder (`public/index.html` or `dist/index.html`), and `npm run build`. The dev server and build refuse to start while it's there. |
 | `firebase-tools no longer supports Java version before 21` | Install JDK 21+ and point `JAVA_HOME` at it (emulators only). |
 | *Port … is not open* when starting emulators | Something else is using that port. Change it in `firebase.json` and `EMULATOR_PORTS` together. |
 | Pasted a new `firebaseConfig` but the page still uses the old project | Build variables take precedence over a pasted config. Change the variables and rebuild, or build without them. **Disconnect this browser** in the lobby clears a pasted config. |
