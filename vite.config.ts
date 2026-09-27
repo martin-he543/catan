@@ -8,6 +8,20 @@ import { githubPagesAssets } from './github-pages-assets.js'
 export default defineConfig({
   base: process.env.VITE_BASE ?? '/',
   plugins: [react(), tailwindcss(), githubPagesAssets()],
+  // The Play and Import pages load lazily, so without this the dev server only
+  // discovers their dependencies on first visit, re-optimizes, and force-reloads
+  // the page — which leaves already-open tabs requesting stale chunks.
+  optimizeDeps: {
+    include: [
+      'firebase/app',
+      'firebase/auth',
+      'firebase/firestore',
+      'firebase/functions',
+      '@anthropic-ai/sdk',
+      '@anthropic-ai/sdk/helpers/json-schema',
+      '@google/genai',
+    ],
+  },
   build: {
     // Firestore's SDK is a single ~550 kB chunk, loaded only by the Play pages.
     chunkSizeWarningLimit: 600,
