@@ -31,3 +31,11 @@ ui-debug.log*
 database-debug.log*
 pubsub-debug.log*
 functions/lib
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+serviceAccount*.json
+*-adminsdk-*.json
